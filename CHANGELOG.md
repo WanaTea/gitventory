@@ -6,24 +6,14 @@
 **1.0 之前接口仍可能调整**（配置项、API 响应字段），不兼容改动会在对应版本的 `Changed` 段写明。
 新增条目请加在 `[未发布]` 下，发版时把它改名成版本号并补上日期。
 
-## [未发布]
-
-### 变更
-
-- **项目更名为 Gitventory**（原名 Github Manager）。原因：本工具支持 GitHub / GitLab / Gitee / Codeup /
-  CODING 五种平台，原名只提 GitHub 既不准确，也涉及 GitHub 商标在第三方项目名中的使用限制。
-- **环境变量前缀 `GHM_` → `GITVENTORY_`**：`GITVENTORY_SCAN_ROOTS`、`GITVENTORY_SELF_HOSTED_HOSTS`、
-  `GITVENTORY_STALE_DAYS`、`GITVENTORY_DATA_DIR`。**破坏性变更**：已有的 `.env` 与环境变量需要改名
-  （`PORT` 不变）。此次更名发生在首次公开发布之前，没有已发布版本受影响。
-- 默认数据目录 `~/.github-manager` → `~/.gitventory`；前端列设置的 localStorage 键同步改名
-  （浏览器里已存的列显示/排序会重置一次）。
-
 ## [0.1.0] - 2026-09-26
 
 首个公开版本：本机 git 仓库盘点 + 分支管理。本地优先，零凭据，不联网。
 
 ### 新增
 
+- **一键启动**：`npm run launch` —— 检查 Node / git 版本、装依赖、构建前端、起服务并打开浏览器；
+  做过的步骤会跳过，端口被占用时给出明确指引。
 - **仓库清单**：扫描本机目录，找出含 `.git` 的仓库（深度 ≤ 5，跳过隐藏目录与 `node_modules`）。
   扫描根默认取「存在的常见目录」（`~/code`、`~/Projects`、`~/dev`、`~/Documents`、`~/Desktop` 等，
   全不存在则退回 home），也可在界面的「扫描范围」里就地修改并立即重扫。
@@ -47,6 +37,13 @@
 
 ### 变更
 
+- **项目更名为 Gitventory**（原名 Github Manager）：本工具支持 GitHub / GitLab / Gitee / Codeup /
+  CODING 五种平台，原名只提 GitHub 既不准确，也涉及 GitHub 商标在第三方项目名中的使用限制。
+  更名发生在首次公开发布之前，没有已发布版本受影响。
+- **环境变量前缀 `GHM_` → `GITVENTORY_`**：`GITVENTORY_SCAN_ROOTS`、`GITVENTORY_SELF_HOSTED_HOSTS`、
+  `GITVENTORY_STALE_DAYS`、`GITVENTORY_DATA_DIR`（`PORT` 不变）。
+- 默认数据目录 `~/.github-manager` → `~/.gitventory`；前端列设置的 localStorage 键同步改名
+  （浏览器里已存的列显示 / 排序会重置一次）。
 - 界面主题取自 DeepSeek Harness 的令牌体系：层次靠发丝边框与留白而非阴影，
   主操作近黑、强调色品牌蓝，语义色只以 10% 透明度做底。
 - 「打开目标」由编译期常量改为运行期配置；不可用原因由服务端下发，与接口 501 的文案同源。

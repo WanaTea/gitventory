@@ -1,5 +1,7 @@
 # Gitventory
 
+[![CI](https://github.com/WanaTea/gitventory/actions/workflows/ci.yml/badge.svg)](https://github.com/WanaTea/gitventory/actions/workflows/ci.yml)
+
 把本机上散落各处的 git 仓库扫出来，一眼看清它们各自属于哪个平台、有没有接远程、有没有未提交 / 未推送。
 
 > `Gitventory` = **git** + **inventory**（盘点）· Local-first dashboard for the git repositories already on your machine.
@@ -31,13 +33,21 @@
 需要 **Node ≥ 22.18** 与 **git**。
 
 ```bash
-git clone <this-repo>
-cd Gitventory
-npm install
-npm run dev
+git clone https://github.com/WanaTea/gitventory.git
+cd gitventory
+npm run launch
 ```
 
-打开 http://localhost:5173 。
+`npm run launch` 会把剩下的事一次做完：检查 Node / git 版本 → 装依赖 → 构建前端 → 起服务 → 打开浏览器。
+做过的步骤会跳过，以后再用同一条命令即可（默认地址 http://127.0.0.1:8787）。
+
+端口被占用时它会直接告诉你，换一个即可：`PORT=8899 npm run launch`。
+
+要改代码的话用开发模式，前后端分离 + 热更新：
+
+```bash
+npm run dev   # 前端 http://localhost:5173 ，/api 代理到 8787
+```
 
 > **为什么 Node 要求 ≥ 22.18**：服务端直接用 `node src/index.ts` 跑 TypeScript，
 > 依赖 Node 的原生类型剥离（22.18 起默认启用）。版本过低会抛
@@ -68,6 +78,7 @@ cp .env.example .env
 
 | 命令 | 作用 |
 | --- | --- |
+| `npm run launch` | **一键启动**：检查环境 → 装依赖 → 构建 → 起服务 → 开浏览器 |
 | `npm run dev` | 同时启动服务端（8787）与前端（5173，带热更新与 `/api` 代理） |
 | `npm run build` | 构建前端到 `web/dist` |
 | `npm start` | 只启动服务端；`web/dist` 存在时由同一端口托管前端 |

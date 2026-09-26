@@ -13,18 +13,21 @@
 ## 起步
 
 ```bash
-git clone <this-repo>
-cd Gitventory
+git clone https://github.com/WanaTea/gitventory.git
+cd gitventory
 npm install
 npm run dev
 ```
 
 前端在 http://localhost:5173（带热更新，`/api` 代理到 8787），服务端在 8787。
 
+只是想跑起来看看，用 `npm run launch` 更省事（它会把装依赖、构建、起服务一次做完）。
+
 ## 常用命令
 
 | 命令 | 说明 |
 | --- | --- |
+| `npm run launch` | 一键启动（装依赖 → 构建 → 起服务 → 开浏览器） |
 | `npm run dev` | 并行拉起前后端 |
 | `npm run lint` / `npm run typecheck` | 代码检查（服务端 + 前端） |
 | `npm run build` | 构建前端到 `web/dist` |
