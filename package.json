@@ -1,0 +1,25 @@
+{
+  "name": "gitventory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first git repository manager - see all your local repos, their platforms, and unlinked status at a glance",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "start": "npm run start -w server",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
+    "lint": "npm run lint -w server && npm run lint -w web",
+    "smoke": "node scripts/smoke.mjs"
+  }
+}

@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    # 三平台都跑：这个项目对外声称支持 Windows（命令探测走 PATHEXT、explorer 的退出码），
+    # 而 macOS 是本机开发环境 —— 只有这里能把那句声明变成可验证的事实。
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 固定开发/CI 的版本；最低门槛见 package.json 的 engines
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      # 类型检查之外再走一次真实构建：@shared 是跨 workspace 的源码别名，
+      # 只有构建才能证明前端产物真的打得出来
+      - run: npm run build
+
+      # 以上全是静态检查；这一步真的把服务拉起来（扫目录 / 采集 git / 返回 JSON），
+      # 是「能在 Windows 上跑」这句话唯一的自动化背书
+      - run: npm run smoke
+        env:
+          SMOKE_PORT: 8790

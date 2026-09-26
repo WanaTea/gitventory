@@ -1,0 +1,81 @@
+{
+  "_doc": "复制为 config/open-targets.json 后修改。字段说明见 README「用外部应用打开」一节。defaults 见 server/src/services/open-targets.service.ts 的 DEFAULT_TARGETS。",
+  "replaceDefaults": false,
+  "targets": [
+    {
+      "id": "finder",
+      "label": "在 Finder 中打开",
+      "labels": {
+        "win32": "在资源管理器中打开",
+        "linux": "在文件管理器中打开"
+      },
+      "commands": {
+        "darwin": ["open"],
+        "win32": ["explorer"],
+        "linux": ["xdg-open"]
+      },
+      "always": true,
+      "ignoreExitCode": true
+    },
+    {
+      "id": "vscode",
+      "label": "用 VSCode 打开",
+      "labels": {
+        "win32": "用 VS Code 打开"
+      },
+      "commands": {
+        "darwin": ["open", "-b", "com.microsoft.VSCode"],
+        "win32": ["code"],
+        "linux": ["code"]
+      },
+      "apps": {
+        "darwin": ["/Applications/Visual Studio Code.app", "~/Applications/Visual Studio Code.app"]
+      }
+    },
+    {
+      "id": "codebuddy",
+      "label": "用 CodeBuddy CN 打开",
+      "commands": {
+        "darwin": ["open", "-b", "com.tencent.codebuddycn"],
+        "win32": [],
+        "linux": []
+      },
+      "apps": {
+        "darwin": ["/Applications/CodeBuddy CN.app", "~/Applications/CodeBuddy CN.app"]
+      }
+    },
+    {
+      "id": "trae",
+      "label": "用 Trae 打开",
+      "commands": {
+        "darwin": ["open", "-a", "%APP%"],
+        "win32": [],
+        "linux": []
+      },
+      "apps": {
+        "darwin": ["/Applications/Trae.app", "~/Applications/Trae.app"]
+      }
+    },
+    {
+      "id": "warp",
+      "label": "在 Warp 中打开",
+      "commands": {
+        "darwin": ["open", "-b", "dev.warp.Warp-Stable"],
+        "win32": [],
+        "linux": []
+      },
+      "apps": {
+        "darwin": ["/Applications/Warp.app", "~/Applications/Warp.app"]
+      }
+    },
+    {
+      "id": "idea",
+      "label": "用 IntelliJ IDEA 打开",
+      "commands": {
+        "darwin": ["open", "-b", "com.jetbrains.intellij"],
+        "win32": ["idea64.exe"],
+        "linux": ["idea"]
+      }
+    }
+  ]
+}

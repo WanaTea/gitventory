@@ -1,0 +1,503 @@
+/*
+ * 主题层 —— 设计语言取自「DeepSeek Harness」（dsh）工作台
+ *
+ * 令牌不是凭空拟定的，逐一抄自 dsh 官方产物的真实定义：
+ *   - @deepseek-ai/dsh-client-ui-theme/lib/client.js  → 静态色板 + 明/暗别名
+ *   - @deepseek-ai/dsh-web-frontend/dist/assets/index-*.css → 组件微观尺寸
+ *
+ * 转译要点（这是 dsh 视觉性格的全部来源，改之前先读一遍）：
+ *   1. 画布纯白，层次靠「发丝边框（0.5px 低透明度）+ 空隙」，不靠阴影与灰底；
+ *   2. 双色分工：主操作按钮 = 近黑 #0f1115，强调/链接 = 品牌蓝 #4176e6，二者不混用；
+ *   3. 语义色只以 10% 透明度做底、同色做字（对应 dsh 的 color-mix 用法），不做实心色块；
+ *   4. 圆角三段：控件 8px / 卡片 12px / 徽标与按钮 999px（dsh 按钮 radius 18px、tag 999px）；
+ *   5. 字号三段：14px 正文 / 12–13px 次要 / 11px 徽标；代码类文本一律等宽字体。
+ */
+
+:root {
+  /* ── 静态中性色（dsh neutral-bluish scale）─────────────── */
+  --dsw-neutral-00: #ffffff;
+  --dsw-neutral-50: #f9fafb;
+  --dsw-neutral-60: #f5f6f7;
+  --dsw-neutral-75: #f1f3f5;
+  --dsw-neutral-100: #ebeef2;
+  --dsw-neutral-150: #e9ecf2;
+  --dsw-neutral-200: #e1e5ee;
+  --dsw-neutral-300: #cfd3d6;
+  --dsw-neutral-400: #adb2b8;
+  --dsw-neutral-500: #979da6;
+  --dsw-neutral-600: #81858c;
+  --dsw-neutral-700: #61666b;
+  --dsw-neutral-750: #43454a;
+  --dsw-neutral-800: #353638;
+  --dsw-neutral-850: #2c2c2e;
+  --dsw-neutral-900: #1b1b1c;
+  --dsw-neutral-950: #151517;
+  --dsw-neutral-1000: #0f1115;
+
+  /* ── DeepSeek 品牌蓝（dsh deepseek scale）──────────────── */
+  --dsw-deepseek-50: #edf3fe;
+  --dsw-deepseek-100: #e4edfd;
+  --dsw-deepseek-200: #d3e2ff;
+  --dsw-deepseek-300: #b7c8fe;
+  --dsw-deepseek-400: #679efe;
+  --dsw-deepseek-500: #4176e6;
+  --dsw-deepseek-600: #4868b2;
+
+  /* ── 语义 tint（dsh state-*-tertiary）─────────────────── */
+  --dsw-tint-success: #e6faed;
+  --dsw-tint-warning: #fef5e7;
+  --dsw-tint-danger: #fee2e2;
+  --dsw-tint-info: var(--dsw-neutral-60);
+  --dsw-tint-accent: var(--dsw-deepseek-50);
+
+  /* ── 语义主体色 ──────────────────────────────────────── */
+  --dsw-success: #22c55e;
+  --dsw-warning: #f59e0b;
+  --dsw-warning-text: #dd8629;
+  --dsw-danger: #ec1313;
+  --dsw-info: var(--dsw-neutral-700);
+
+  /* ── 明色别名（dsh alias）────────────────────────────── */
+  --dsw-bg-base: var(--dsw-neutral-00);
+  --dsw-bg-layer-1: var(--dsw-neutral-00);
+  --dsw-bg-layer-2: var(--dsw-neutral-00);
+  --dsw-bg-module: var(--dsw-neutral-60);
+  --dsw-bg-elevated: var(--dsw-neutral-1000);
+
+  --dsw-border-l1: #0000000a;
+  --dsw-border-l2: #0000001a;
+  --dsw-border-l3: #0000001f;
+  --dsw-border-l4: #00000029;
+
+  --dsw-label-primary: var(--dsw-neutral-1000);
+  --dsw-label-secondary: var(--dsw-neutral-700);
+  --dsw-label-tertiary: var(--dsw-neutral-600);
+  --dsw-label-caption: var(--dsw-neutral-400);
+  --dsw-label-placeholder: var(--dsw-neutral-400);
+  --dsw-label-on-fill: var(--dsw-neutral-00);
+
+  /* 交互叠加：一律用半透明蓝黑，叠在任何底色上都协调（dsh interactive-bg-*） */
+  --dsw-interactive-hover: #2631480f;
+  --dsw-interactive-active: #2631481a;
+
+  --dsw-brand: var(--dsw-neutral-1000);
+  --dsw-brand-hover: var(--dsw-neutral-750);
+  --dsw-accent: var(--dsw-deepseek-500);
+  --dsw-accent-strong: var(--dsw-deepseek-600);
+
+  --dsw-radius-sm: 6px;
+  --dsw-radius-md: 8px;
+  --dsw-radius-lg: 12px;
+  --dsw-radius-pill: 999px;
+
+  --dsw-font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, Menlo, Courier, monospace;
+
+  --dsw-shadow-popover: 0 12px 32px #0f11151a, 0 2px 8px #0f11150d;
+  --dsw-shadow-overlay: 0 24px 48px #0f11151f;
+
+  /* ── Element Plus 变量映射 ───────────────────────────── */
+  /* 主色给品牌蓝：它同时驱动链接、focus、选中态，语义更贴近「强调」；
+     近黑则专供主按钮（见下方 .el-button--primary 覆盖），复刻 dsh 的双色分工。 */
+  --el-color-primary: var(--dsw-deepseek-500);
+  --el-color-primary-light-3: var(--dsw-deepseek-400);
+  --el-color-primary-light-5: #93b8ff;
+  --el-color-primary-light-7: var(--dsw-deepseek-300);
+  --el-color-primary-light-8: var(--dsw-deepseek-200);
+  --el-color-primary-light-9: var(--dsw-deepseek-50);
+  --el-color-primary-dark-2: var(--dsw-deepseek-600);
+
+  --el-color-success: var(--dsw-success);
+  --el-color-success-light-3: #4ed17e;
+  --el-color-success-light-9: var(--dsw-tint-success);
+  --el-color-warning: var(--dsw-warning);
+  --el-color-warning-light-3: #f7ad31;
+  --el-color-warning-light-9: var(--dsw-tint-warning);
+  --el-color-danger: var(--dsw-danger);
+  --el-color-danger-light-3: #f25a5a;
+  --el-color-danger-light-9: var(--dsw-tint-danger);
+  --el-color-error: var(--dsw-danger);
+  --el-color-error-light-9: var(--dsw-tint-danger);
+  --el-color-info: var(--dsw-info);
+  --el-color-info-light-9: var(--dsw-tint-info);
+
+  --el-text-color-primary: var(--dsw-label-primary);
+  --el-text-color-regular: var(--dsw-neutral-750);
+  --el-text-color-secondary: var(--dsw-label-tertiary);
+  --el-text-color-placeholder: var(--dsw-label-placeholder);
+  --el-text-color-disabled: var(--dsw-neutral-300);
+
+  --el-border-color: var(--dsw-border-l4);
+  --el-border-color-light: var(--dsw-border-l3);
+  --el-border-color-lighter: var(--dsw-border-l2);
+  --el-border-color-extra-light: var(--dsw-border-l1);
+  --el-border-color-dark: var(--dsw-border-l4);
+  --el-border-color-darker: var(--dsw-border-l4);
+
+  --el-fill-color: var(--dsw-neutral-60);
+  --el-fill-color-light: var(--dsw-neutral-50);
+  --el-fill-color-lighter: var(--dsw-neutral-50);
+  --el-fill-color-extra-light: var(--dsw-neutral-50);
+  --el-fill-color-blank: var(--dsw-neutral-00);
+  --el-fill-color-dark: var(--dsw-neutral-100);
+  --el-fill-color-darker: var(--dsw-neutral-200);
+
+  --el-bg-color: var(--dsw-bg-base);
+  --el-bg-color-page: var(--dsw-bg-base);
+  --el-bg-color-overlay: var(--dsw-neutral-00);
+
+  --el-border-radius-base: var(--dsw-radius-md);
+  --el-border-radius-small: var(--dsw-radius-sm);
+  --el-border-radius-round: var(--dsw-radius-pill);
+
+  --el-font-size-base: 14px;
+  --el-box-shadow: var(--dsw-shadow-popover);
+  --el-box-shadow-light: 0 4px 12px #0f11150f;
+  --el-box-shadow-lighter: 0 2px 8px #0f11150a;
+
+  /* 表格私有变量：表头弱化 + 行 hover 用交互叠加色。
+     ⚠️ Element Plus 把一部分变量定义在组件自身作用域（.el-table / .el-checkbox），
+     :root 里写同名字典会被它们盖掉；这类变量必须落到同选择器上，见文件末尾。 */
+  --el-table-border-color: var(--dsw-border-l2);
+  --el-table-header-text-color: var(--dsw-label-tertiary);
+  --el-table-text-color: var(--dsw-label-secondary);
+  --el-table-row-hover-bg-color: var(--dsw-interactive-hover);
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-expanded-cell-bg-color: transparent;
+
+  --el-tag-border-radius: var(--dsw-radius-pill);
+}
+
+/* ── 基础排版 ───────────────────────────────────────────── */
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--dsw-bg-base);
+  color: var(--dsw-label-primary);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 数值对齐：等宽数字，避免数字变化时列宽抖动 */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 路径 / Remote / 分支等代码类文本（dsh 的 --ds-font-family-code 口径） */
+.mono {
+  font-family: var(--dsw-font-mono);
+  font-size: 12px;
+  letter-spacing: -0.01em;
+}
+
+/* ── 跨组件工具类 ──────────────────────────────────────── */
+
+/* 图标按钮的图标：统一 16px（图标源文件 64/256px 不等） */
+.app-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+/* 禁用态按钮不派发鼠标事件，用它包一层让 tooltip（禁用原因）仍可悬浮显示 */
+.app-btn-wrap {
+  display: inline-flex;
+}
+
+/* 行内图标按钮：26px 圆形热区，hover 用交互叠加色（dsh 图标按钮口径）。
+   列表页操作列与弹窗 header 共用，故放全局；用类名显式选择，不泛化到所有 link 按钮。 */
+.icon-btn.el-button.is-link {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.icon-btn.el-button.is-link:hover {
+  background: var(--dsw-interactive-hover);
+}
+
+.icon-btn.el-button.is-link.is-disabled {
+  background: transparent;
+}
+
+/* 发丝滚动条（dsh scrollbar 令牌） */
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--dsw-neutral-200);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: var(--dsw-radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--dsw-neutral-300);
+  background-clip: padding-box;
+}
+
+/* ── 按钮：一律 pill，主按钮近黑 ────────────────────────── */
+
+.el-button {
+  --el-button-font-weight: 400;
+  border-radius: var(--dsw-radius-pill);
+  padding: 0 14px;
+}
+
+/* 覆盖范围排除主按钮（黑底）与链接/文字按钮（无边框），它们各有既有外观 */
+.el-button:not(.el-button--primary, .is-link, .is-text) {
+  --el-button-border-color: var(--dsw-border-l4);
+  --el-button-hover-bg-color: var(--dsw-interactive-hover);
+  --el-button-hover-border-color: var(--dsw-border-l4);
+  --el-button-hover-text-color: var(--dsw-label-primary);
+  --el-button-active-bg-color: var(--dsw-interactive-active);
+  --el-button-active-border-color: var(--dsw-border-l4);
+  border-width: 0.5px;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--dsw-brand);
+  --el-button-border-color: var(--dsw-brand);
+  --el-button-text-color: var(--dsw-label-on-fill);
+  --el-button-hover-bg-color: var(--dsw-brand-hover);
+  --el-button-hover-border-color: var(--dsw-brand-hover);
+  --el-button-hover-text-color: var(--dsw-label-on-fill);
+  --el-button-active-bg-color: var(--dsw-neutral-950);
+  --el-button-active-border-color: var(--dsw-neutral-950);
+  --el-button-disabled-bg-color: var(--dsw-neutral-300);
+  --el-button-disabled-border-color: var(--dsw-neutral-300);
+}
+
+/* ── 输入类控件：32px 高 · 8px 圆角 · 发丝边框 · focus 变近黑 ── */
+
+.el-input__wrapper,
+.el-select__wrapper {
+  min-height: 32px;
+  border-radius: var(--dsw-radius-md);
+  background-color: var(--dsw-bg-layer-1);
+  box-shadow: 0 0 0 0.5px var(--dsw-border-l4) inset !important;
+  transition: box-shadow 0.15s ease;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover {
+  background-color: var(--dsw-neutral-50);
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  background-color: var(--dsw-bg-layer-1);
+  box-shadow: 0 0 0 1px var(--dsw-brand) inset !important;
+}
+
+.el-input__inner,
+.el-select__placeholder {
+  font-size: 13px;
+}
+
+.el-select__wrapper .el-tag {
+  --el-tag-bg-color: var(--dsw-neutral-60);
+  --el-tag-text-color: var(--dsw-label-secondary);
+  --el-tag-border-color: transparent;
+  height: 20px;
+  padding: 0 8px;
+}
+
+/* ── 徽标：dsh tag 口径（11px / 500 字重 / 圆形内边距 1px 8px）── */
+
+.el-tag {
+  height: 19px;
+  padding: 0 8px;
+  border-radius: var(--dsw-radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 17px;
+  border-width: 1px;
+}
+
+/* 语义色：tint 底 + 同色字，替代 Element Plus 的浅色实心块 */
+.el-tag--warning.el-tag--light {
+  --el-tag-bg-color: var(--dsw-tint-warning);
+  --el-tag-text-color: var(--dsw-warning-text);
+  --el-tag-border-color: transparent;
+}
+
+.el-tag--danger.el-tag--light {
+  --el-tag-bg-color: var(--dsw-tint-danger);
+  --el-tag-text-color: var(--dsw-danger);
+  --el-tag-border-color: transparent;
+}
+
+.el-tag--success.el-tag--light {
+  --el-tag-bg-color: var(--dsw-tint-success);
+  --el-tag-text-color: var(--dsw-success);
+  --el-tag-border-color: transparent;
+}
+
+.el-tag--info.el-tag--light {
+  --el-tag-bg-color: var(--dsw-tint-info);
+  --el-tag-text-color: var(--dsw-info);
+  --el-tag-border-color: transparent;
+}
+
+/* 描边徽标（dsh tag[data-tone=outline]）：与语义色徽标区分「事实」与「告警」 */
+.el-tag.tag-outline {
+  --el-tag-bg-color: transparent;
+  --el-tag-text-color: var(--dsw-label-tertiary);
+  --el-tag-border-color: var(--dsw-border-l4);
+  border-width: 0.5px;
+}
+
+/* ── 表格：无全网格，只留水平发丝线 ─────────────────────── */
+
+.el-table {
+  font-size: 13px;
+  /* 组件作用域变量：与 Element Plus 同选择器、靠引入顺序胜出 */
+  --el-table-header-bg-color: var(--dsw-neutral-50);
+  --el-table-fixed-box-shadow: 0 0 8px #0f11150f;
+}
+
+.el-table th.el-table__cell {
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.el-table td.el-table__cell {
+  padding: 6px 0;
+}
+
+.el-table .cell {
+  padding: 0 12px;
+  line-height: 1.45;
+}
+
+/* 排序箭头常驻会挤压表头文案，改为仅 hover / 激活时出现 */
+.el-table th.el-table__cell .caret-wrapper {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.el-table th.el-table__cell:hover .caret-wrapper,
+.el-table th.el-table__cell.is-sortable.ascending .caret-wrapper,
+.el-table th.el-table__cell.is-sortable.descending .caret-wrapper {
+  opacity: 1;
+}
+
+.el-table__empty-block {
+  min-height: 240px;
+}
+
+/* 固定列的分隔阴影换成发丝线，避免深色投影压过边框 */
+.el-table--scrollable-x .el-table__fixed-right::before,
+.el-table--scrollable-x .el-table__fixed::before {
+  background-color: var(--dsw-border-l2);
+  height: 0.5px;
+}
+
+/* ── 勾选框：选中为近黑（dsh 勾选态不用品牌蓝，蓝色专供强调）──── */
+
+.el-checkbox {
+  --el-checkbox-checked-bg-color: var(--dsw-brand);
+  --el-checkbox-checked-input-border-color: var(--dsw-brand);
+  --el-checkbox-checked-icon-color: var(--dsw-neutral-00);
+  --el-checkbox-checked-text-color: var(--dsw-label-primary);
+  --el-checkbox-input-border-color-hover: var(--dsw-brand);
+  font-size: 13px;
+}
+
+/* ── 浮层 ──────────────────────────────────────────────── */
+
+.el-popover.el-popper {
+  padding: 10px;
+  border: 0.5px solid var(--dsw-border-l2);
+  border-radius: var(--dsw-radius-lg);
+  box-shadow: var(--dsw-shadow-popover);
+}
+
+.el-popper.is-dark {
+  background: var(--dsw-neutral-850);
+  border-color: transparent;
+  border-radius: var(--dsw-radius-md);
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.el-popper.is-dark .el-popper__arrow::before {
+  background: var(--dsw-neutral-850);
+  border-color: transparent;
+}
+
+.el-message {
+  border-radius: var(--dsw-radius-pill);
+  border: 0.5px solid var(--dsw-border-l2);
+  box-shadow: var(--dsw-shadow-popover);
+}
+
+/* ── 提示与骨架 ────────────────────────────────────────── */
+
+.el-alert {
+  padding: 10px 12px;
+  border-radius: var(--dsw-radius-lg);
+}
+
+.el-alert--warning.is-light {
+  background: var(--dsw-tint-warning);
+  color: var(--dsw-warning-text);
+}
+
+.el-alert--error.is-light {
+  background: var(--dsw-tint-danger);
+  color: var(--dsw-danger);
+}
+
+.el-skeleton {
+  --el-skeleton-color: var(--dsw-neutral-60);
+  --el-skeleton-to-color: var(--dsw-neutral-100);
+  padding: 8px 12px;
+}
+
+.el-descriptions {
+  --el-descriptions-item-bordered-label-background: var(--dsw-neutral-50);
+  font-size: 13px;
+}
+
+.el-descriptions__body .el-descriptions__table {
+  border-radius: var(--dsw-radius-md);
+  overflow: hidden;
+}
+
+.el-descriptions__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-label-primary);
+}
+
+.el-descriptions__label.el-descriptions__cell.is-bordered-label {
+  color: var(--dsw-label-tertiary);
+  font-weight: 400;
+}
+
+.el-divider--vertical {
+  --el-border-color: var(--dsw-border-l2);
+  margin: 0 4px;
+}

@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# 环境变量：示例文件必须能提交，故先忽略再反选
+.env
+.env.*
+!.env.example
+
+# 本地扫描产物（含本机绝对路径，属于个人数据，不该进仓库）
+仓库列表/
+
+# 个人「打开方式」配置（模板见 config/open-targets.example.json，含本机应用路径）
+config/open-targets.json
+
+# CodeGraph 索引（可用 `codegraph init` 重新生成）
+.codegraph/
+
+# 其它构建 / 编辑器缓存
+*.tsbuildinfo
+.vite/
