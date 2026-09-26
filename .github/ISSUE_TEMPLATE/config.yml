@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用问题 / 想法讨论
+    url: https://github.com/WanaTea/gitventory/discussions
+    about: 不会用、不确定是不是 bug、想聊聊想法 —— 请先在 Discussions 提问，确认是缺陷后再开 Issue。
+  - name: 安全问题
+    url: https://github.com/WanaTea/gitventory/security/advisories/new
+    about: 请勿在公开 Issue 里报告安全漏洞，用这里的私密报告通道。

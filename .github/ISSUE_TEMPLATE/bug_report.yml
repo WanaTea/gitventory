@@ -1,0 +1,87 @@
+name: 缺陷报告
+description: 功能没按预期工作（崩溃、报错、结果不对）
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先确认两件事：
+
+        1. 服务确实起来了（终端里有 `[gitventory] server listening at ...`）
+        2. 本机装了 git（`git --version` 有输出）
+
+        只是「不会用 / 不确定是不是 bug」的话，请先去 Discussions 提问。
+
+  - type: input
+    id: version
+    attributes:
+      label: Gitventory 版本
+      description: Release 页上的版本号，或 `git describe --tags` 的输出
+      placeholder: v0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node 版本
+      description: 运行 `node -v` 的输出
+      placeholder: v22.22.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际发生了什么
+      description: 具体现象，最好说明是界面上看到的还是终端里报的
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 你期望发生什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 执行 `npm run launch`
+        2. 打开 http://127.0.0.1:8787
+        3. 双击某一行
+        4. 出现 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志
+      description: |
+        终端里 `[gitventory]` 开头的输出。
+        **粘贴前请先删掉其中的绝对路径、仓库名、内网域名** —— 这个仓库是公开的。
+      render: shell
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我已检查上面的内容与截图，不含本机路径、仓库名、token 等个人信息
+          required: true
