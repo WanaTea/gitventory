@@ -10,6 +10,7 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -78,6 +79,28 @@ if (!existsSync(path.join(root, 'web', 'dist', 'index.html'))) {
 } else {
   log('前端产物已就绪 ✓');
 }
+
+// 5. 先确认端口是空的。
+//    放在起服务之前：否则服务起不来、但健康检查打到占用端口的那个实例上，
+//    会误报「已就绪」，用户看到的是一串 npm error，很难懂。
+await new Promise((resolve) => {
+  const probe = net
+    .connect(PORT, '127.0.0.1')
+    .setTimeout(1500)
+    .once('connect', () => {
+      probe.destroy();
+      fail(
+        `端口 ${PORT} 已被占用，可能已经有一个 Gitventory 在跑。\n` +
+          `  要么关掉它（pkill -f "scripts/dev.mjs" 或 pkill -f "src/index.ts"），\n` +
+          `  要么换端口：PORT=8899 npm run launch`,
+      );
+    })
+    .once('timeout', () => {
+      probe.destroy();
+      resolve();
+    })
+    .once('error', () => resolve());
+});
 
 log(`正在启动，稍等一下…（地址 ${URL}）`);
 
