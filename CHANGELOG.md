@@ -14,6 +14,19 @@
   被当成相对路径拒绝，而服务端 `isAbsolute()` 本来认它 —— 合法的输入被挡在客户端。
   改为跨平台判定（POSIX / Windows 盘符 / UNC / `~`），`expandHome` 同时接受 `~\` 写法，
   两处提示文案也改成跨平台口径。
+- **选择文件夹时选中盘符根被判成非法路径**：`BrowseForFolder` 返回 `D:\`，削掉末尾斜杠后
+  变成 `D:` —— 那是「驱动器相对路径」，`isAbsolute()` 与前端校验都不认。削尾现在保留盘符根。
+- **Windows 上三处「起了进程却看不见效果」**：根因同为 `windowsHide: true`（等价
+  `CREATE_NO_WINDOW`），被隐藏的不只是控制台，需要用户看见的窗口也一起消失：
+  - `npm run dev` 直接报 `spawn EINVAL` 起不来 —— `npm.cmd` 是批处理脚本，不经 shell
+    无法 `CreateProcess`，现与 `scripts/start.mjs` 对齐加 `shell`；
+  - 「选择文件夹…」的 PowerShell 选择框不显示，进程却一直阻塞，之后每次点击都返回
+    409「已经有一个文件夹选择框开着」—— 改用 PowerShell 自己的 `-WindowStyle Hidden`
+    （控制台隐藏、窗口照常弹）并补 `-STA`；
+  - 「在资源管理器中打开」窗口不显示，而 `explorer` 成功时退出码也是 1、又被
+    `ignoreExitCode` 放行，表现为「提示成功、什么都没打开」。
+
+  执行 git 命令处（`utils/exec-git.ts`）的 `windowsHide` 保留：git 没有界面，隐藏控制台是对的。
 
 ## [0.1.0] - 2026-09-26
 
