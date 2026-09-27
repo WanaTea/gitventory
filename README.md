@@ -138,6 +138,50 @@ cp config/open-targets.example.json config/open-targets.json
 > CodeBuddy / Trae / Warp 的 Windows 命令名**没有实测过，所以故意留空**：按钮会显示「当前系统（win32）未配置该打开方式」，
 > 而不是写一个猜的命令名，让人点了之后莫名失败。填法参考模板里的 `idea` 条目（JetBrains 用 `idea64.exe`）。
 
+### 让 AI 帮你配置「用外部应用打开」
+
+自己找应用路径很烦，而且 macOS 与 Windows 的装法完全不同。**把下面这段发给你的 AI**
+（CodeBuddy / Cursor / Claude Code / Trae 都可以），它会扫一遍你本机装了哪些编辑器与终端，
+直接写好 `config/open-targets.json` 并验证一遍。
+
+候选路径清单在 [docs/open-targets-paths.md](./docs/open-targets-paths.md)（macOS / Windows 各一份，
+每条标了置信度，另有「待实测」一节 —— 别照抄没验证过的路径）。
+
+````text
+请帮我为 Gitventory 配置「用外部应用打开」（仓库地址见当前项目）。
+
+1. 先判断我用的系统（macOS 还是 Windows）。
+2. 读 docs/open-targets-paths.md，按里面的候选路径逐个检查我本机是否**真实存在**
+   （用文件存在性判断，不要凭猜测）；不存在的直接丢弃，不要写进配置。
+3. 复制 config/open-targets.example.json 为 config/open-targets.json，只为真实存在的应用写条目：
+   commands 优先写 PATH 上的命令名，PATH 上没有就写绝对路径（本项目支持绝对路径直判可用）。
+4. Windows 路径在 JSON 里的反斜杠要转义成 \\。
+5. 起服务验证：npm start，然后看 http://127.0.0.1:8787/api/health 里 openTargets 各项的
+   available 与 reason —— available: false 的就是还缺配置或没装，reason 会说清原因。
+6. 不确定的路径不要编造，单独列一节「待实测」告诉我。
+7. 最后给我一份「保留了什么 / 丢了什么 / 待实测什么」的清单。
+````
+
+不想用 AI 也行，照这张表自己填（完整版含 iTerm2 / Warp / kitty / Tabby / JetBrains 全家桶在
+[docs/open-targets-paths.md](./docs/open-targets-paths.md)）：
+
+| 应用 | macOS | Windows |
+| --- | --- | --- |
+| VS Code | `/Applications/Visual Studio Code.app` | `%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe` |
+| Cursor | `/Applications/Cursor.app` | `%LOCALAPPDATA%\Programs\cursor\Cursor.exe` |
+| IntelliJ IDEA | `/Applications/IntelliJ IDEA.app` | `%ProgramFiles%\JetBrains\IntelliJ IDEA\bin\idea64.exe` |
+| Sublime Text | `/Applications/Sublime Text.app` | `%ProgramFiles%\Sublime Text\sublime_text.exe` |
+| Android Studio | `/Applications/Android Studio.app` | `%LOCALAPPDATA%\Programs\Android Studio\bin\studio64.exe` |
+| 终端 | `/Applications/iTerm.app`、`/Applications/Warp.app` | `wt`（Store 版在 `%LOCALAPPDATA%\Microsoft\WindowsApps\wt.exe`） |
+| 终端（Windows 专属） | — | PowerShell 7：`%ProgramFiles%\PowerShell\7\pwsh.exe`、Git Bash：`%ProgramFiles%\Git\git-bash.exe` |
+
+两点提醒：
+
+- 配置文件里**只能写绝对路径或以 `~` 开头**（`expandHome()` 不解析 `%LOCALAPPDATA%` 这类环境变量），
+  所以把上表的 `%VAR%` 换成展开后的真实路径。Windows 还要把 `\` 写成 `\\`。
+- 同一个应用常有两个安装位置（用户级 `%LOCALAPPDATA%\Programs\...` 与系统级 `%ProgramFiles%\...`），
+  两个都试一下——装的时候没要管理员权限的会落在前者。
+
 ## 平台差异
 
 - **「用外部应用打开」跨平台，默认命令按系统不同**：macOS 走 `open` + bundle id，Windows / Linux 走 PATH 上的命令。
