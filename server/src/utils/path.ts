@@ -2,13 +2,14 @@ import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 
 /**
- * 展开 `~` / `~/x` 为绝对路径。
+ * 展开 `~` / `~/x` / `~\x` 为绝对路径。
  *
  * 扫描根有两个来源——环境变量与界面输入——两处都允许用户写 `~`，故收在这一份实现里。
+ * `~\` 是 Windows 上同一个意图的写法：只认 `~/` 会让它原样透传成非法路径。
  */
 export function expandHome(target: string): string {
   if (target === '~') return homedir();
-  if (target.startsWith('~/')) return join(homedir(), target.slice(2));
+  if (target.startsWith('~/') || target.startsWith('~\\')) return join(homedir(), target.slice(2));
   return target;
 }
 
