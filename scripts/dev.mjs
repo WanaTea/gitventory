@@ -19,6 +19,9 @@ let shuttingDown = false;
 for (const target of targets) {
   const child = spawn(npm, ['run', 'dev', '-w', target], {
     stdio: 'inherit',
+    // Windows 的 npm.cmd 是批处理脚本，不经 shell 直接 CreateProcess 会抛 EINVAL，
+    // 必须借 cmd.exe 解析（与 scripts/start.mjs 保持一致）
+    shell: process.platform === 'win32',
     // 非 Windows 上独立进程组，便于连子孙进程（vite / node）一起终止
     detached: process.platform !== 'win32',
   });

@@ -29,6 +29,12 @@ let picking = false;
 /**
  * Windows 用 Shell.Application.BrowseForFolder —— 就是资源管理器那个文件夹树选择框。
  * 输出编码显式设为 UTF8，否则中文路径会按 GBK 出来变成乱码。
+ *
+ * ⚠️ 这里不能用 `windowsHide: true`：它等价于 CREATE_NO_WINDOW，PowerShell 会以
+ *「无控制台」的方式启动，BrowseForFolder 的模态框不会显示，进程却一直阻塞等用户操作 ——
+ * 界面上表现为「点了没反应」，且 picking 一直为 true，之后每次点击都返回 409。
+ * 要让「控制台不闪、窗口照常弹」，得用 PowerShell 自己的 -WindowStyle Hidden。
+ * -STA 是 COM 的单线程套间要求，BrowseForFolder 依赖它。
  */
 const WIN_SCRIPT = [
   '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8',
@@ -37,9 +43,20 @@ const WIN_SCRIPT = [
   'if ($folder -ne $null) { $folder.Self.Path }',
 ].join('\n');
 
-/** macOS 的 choose folder 会带上末尾斜杠（`/Users/x/code/`），统一去掉；根目录保留 */
+/**
+ * macOS 的 choose folder 会带上末尾斜杠（`/Users/x/code/`），统一去掉。
+ *
+ * 两个「根目录」不能真削：
+ * - POSIX 根 `/` 削完是空串，补回 `/`；
+ * - Windows 盘符根 `D:\` 削完只剩 `D:`，而那是**驱动器相对路径**（相对 D 盘当前目录），
+ *   `node:path.isAbsolute('D:')` 为 false、前端 `^[A-Za-z]:[\\/]` 也匹配不上 ——
+ *   选盘符根时会一路被判成「路径不正确」。必须补回反斜杠。
+ */
 function trimTrailingSlash(target: string): string {
-  return target.replace(/[/\\]+$/, '') || '/';
+  const trimmed = target.replace(/[/\\]+$/, '');
+  if (trimmed === '') return '/';
+  if (/^[A-Za-z]:$/.test(trimmed)) return `${trimmed}\\`;
+  return trimmed;
 }
 
 async function runPicker(): Promise<PickDirResult> {
@@ -61,8 +78,8 @@ async function runPicker(): Promise<PickDirResult> {
     try {
       const { stdout } = await execFileAsync(
         'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-Command', WIN_SCRIPT],
-        { timeout: PICK_TIMEOUT_MS, windowsHide: true },
+        ['-NoProfile', '-NonInteractive', '-STA', '-WindowStyle', 'Hidden', '-Command', WIN_SCRIPT],
+        { timeout: PICK_TIMEOUT_MS },
       );
       // 取消时 BrowseForFolder 返回 $null，脚本没有输出
       const path = stdout.replace(/^\uFEFF/, '').trim();

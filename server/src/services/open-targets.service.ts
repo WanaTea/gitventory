@@ -280,9 +280,11 @@ export async function openRepo(target: string, absPath: string): Promise<void> {
   const app = resolveApp(def, process.platform);
   const args = command.map((part) => (part === APP_PLACEHOLDER ? (app ?? part) : part));
   try {
+    // ⚠️ 不能加 windowsHide（CREATE_NO_WINDOW）：那会让 explorer 的窗口不显示，
+    // 而 explorer 成功时也返回 1、又被 ignoreExitCode 放行 ——
+    // 结果就是「提示成功、但什么都没打开」。这里的意图就是让用户看见窗口。
     await execFileAsync(args[0] ?? '', [...args.slice(1), absPath], {
       timeout: OPEN_TIMEOUT_MS,
-      windowsHide: true,
     });
   } catch (err) {
     // explorer.exe 打开成功也返回 1，按配置放行，避免把成功报成失败
