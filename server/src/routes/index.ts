@@ -10,6 +10,7 @@ import {
   type ReposQuery,
 } from '../shared/repo.ts';
 import { openRepo, resolveOpenTargets } from '../services/open-targets.service.ts';
+import { pickDirectory } from '../services/pick-dir.service.ts';
 import {
   applyReposQuery,
   getRepos,
@@ -58,6 +59,25 @@ router.post('/scan', async (req, res) => {
   if (override.action === 'reset') setScanRoots(null);
   const data = await getRepos({ force: true });
   respond(res, data);
+});
+
+/**
+ * 唤起系统原生的「选择文件夹」对话框，把选中的绝对路径交回前端。
+ *
+ * 界面上的「选择文件夹…」走这里，而不是浏览器 API —— 浏览器的目录选择只给句柄、
+ * 不给绝对路径，扫描用不了。path 为 null 表示用户在系统弹窗里点了取消（正常操作）。
+ */
+router.post('/fs/pick-dir', async (_req, res) => {
+  const result = await pickDirectory();
+  if (result.status === 'unsupported') {
+    fail(res, 501, 501, result.reason);
+    return;
+  }
+  if (result.status === 'busy') {
+    fail(res, 409, 409, '已经有一个文件夹选择框开着，请先在系统弹窗里完成或取消');
+    return;
+  }
+  respond(res, { path: result.status === 'picked' ? result.path : null });
 });
 
 // 用外部应用打开仓库：路径由服务端按 localId 反查，不接受前端传路径。

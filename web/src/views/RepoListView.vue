@@ -35,6 +35,49 @@ const rootInput = ref('')
 /** 常见仓库位置：点一下填进输入框，省去手打路径 */
 const SUGGESTED_ROOTS = ['~/code', '~/Projects', '~/dev', '~/Documents', '~/Desktop']
 
+/**
+ * 「让 AI 代劳」的提示词：给用户一段可以直接交给 AI 的指令。
+ *
+ * 为什么需要它：常见开发目录只覆盖一部分人，真正的工作目录散在 IDE 与终端的
+ * 「最近打开」记录里（VS Code 的 globalStorage、JetBrains 的 recentProjects、
+ * shell 历史里的 cd）—— 让用户自己回忆这些位置不现实。macOS 与 Windows 的
+ * 记录路径完全不同，所以两套都写进提示词，让 AI 先判断系统。
+ *
+ * 用 String.raw：内容里全是 Windows 反斜杠路径，普通字符串字面量会把 `\d` 这类
+ * 序列吃掉一个反斜杠，写出来的路径直接是错的。
+ */
+const AI_PROMPT = String.raw`我在用 Gitventory（本机 git 仓库盘点工具），需要填「扫描范围」。请帮我找出本机该扫描哪些目录。
+
+1. 先判断我用的系统（macOS 还是 Windows）。
+2. 检查这些常见开发目录（存在才用）：
+   macOS：~/code、~/Code、~/Projects、~/dev、~/Developer、~/workspace、~/repos、~/src、~/Documents、~/Desktop
+   Windows：%USERPROFILE%\code、%USERPROFILE%\Projects、%USERPROFILE%\develop、%USERPROFILE%\dev、%USERPROFILE%\workspace、D:\code、D:\develop、D:\Projects
+3. 再读编辑器 / 终端的「最近打开」记录，从中提取项目目录 —— 这步最关键，常见目录往往覆盖不到真实工作目录：
+   - VS Code：macOS ~/Library/Application Support/Code/User/globalStorage/storage.json
+               Windows %APPDATA%\Code\User\globalStorage\storage.json
+     （Insiders 把 Code 换成 "Code - Insiders"，Cursor 换成 Cursor）
+   - JetBrains：macOS ~/Library/Application Support/JetBrains/*/options/recentProjects.xml
+                Windows %APPDATA%\JetBrains\*\options\recentProjects.xml
+   - Windows Terminal：%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json
+   - Shell 历史：~/.zsh_history、~/.bash_history（里面 cd 过的目录）；
+     PowerShell：%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+4. 合并去重后按这几条收敛：
+   - 只保留真实存在的目录
+   - 父目录已覆盖子目录的（如 D:\develop 覆盖 D:\develop\ai），只留父目录
+   - 不要把整个盘符或整个家目录塞进来，会让扫描很慢
+   - 最多 10 个，按重要性排序
+5. 输出一份「每行一个目录」的清单，我可以直接粘贴；每个目录注明来源（常见目录 / VS Code 最近打开 / JetBrains 最近项目 / shell 历史）。`
+
+async function copyAiPrompt(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(AI_PROMPT)
+    ElMessage.success('已复制，粘贴给你的 AI 即可')
+  } catch {
+    // 剪贴板 API 在非安全上下文（非 localhost 的 http）会被拒
+    ElMessage.error('复制失败，请手动选中文本复制')
+  }
+}
+
 const scopeSummary = computed(() => {
   const list = store.roots
   if (list.length === 0) return '未设置'
@@ -71,6 +114,23 @@ function parseRootLines(text: string): string[] | null {
     .filter((line) => line !== '')
   const invalid = lines.find((line) => !isAbsoluteInput(line))
   return invalid === undefined ? lines : null
+}
+
+/**
+ * 唤起系统自带的文件夹选择框（macOS 的 Finder 面板 / Windows 的资源管理器），
+ * 把选中的目录追加进输入框。
+ *
+ * 为什么不用浏览器自己的目录选择：它只给目录句柄、**不给绝对路径**，
+ * 没有路径就没法交给服务端扫描 —— 所以这个框必须由本地服务进程来弹。
+ */
+async function browseDir(): Promise<void> {
+  const path = await store.pickDir()
+  if (path !== null) {
+    addRoot(path)
+    return
+  }
+  // null + error 非空 = 真的失败了；null + error 为空 = 用户点了取消，不该弹提示
+  if (store.error !== '') ElMessage.error(store.error)
 }
 
 /** reset = true 表示清除界面设置的覆盖，回到服务端配置的扫描根 */
@@ -575,6 +635,16 @@ onBeforeUnmount(() => {
           spellcheck="false"
           placeholder="~/code&#10;~/Projects"
         />
+        <div class="scan-pick">
+          <el-button
+            size="small"
+            :loading="store.picking"
+            @click="browseDir"
+          >
+            {{ store.picking ? '请在系统弹窗里选择…' : '选择文件夹…' }}
+          </el-button>
+          <span class="scan-hint">弹的是系统自带的文件夹选择框，选完自动填进上面的输入框</span>
+        </div>
         <div class="scan-suggest">
           <span class="scan-suggest-label">常用位置</span>
           <el-button
@@ -592,6 +662,31 @@ onBeforeUnmount(() => {
           修改后立即按新范围重扫，并在本次服务运行期间保持生效；要长期固定请写入仓库根目录的
           <code class="inline-code">.env</code>（<code class="inline-code">GITVENTORY_SCAN_ROOTS</code>）。
         </p>
+
+        <!-- 不知道该填什么时，把这段交给 AI：本机的「真实工作目录」多半藏在 IDE / 终端的最近记录里 -->
+        <div class="scan-ai">
+          <p class="scan-hint">
+            不知道该填什么？把下面这段发给你的 AI（CodeBuddy / Cursor / Claude Code 都行），
+            它会扫一遍常见开发目录，并从 IDE 与终端的「最近打开」记录里翻出你的项目位置。
+          </p>
+          <el-input
+            :model-value="AI_PROMPT"
+            type="textarea"
+            :rows="9"
+            readonly
+            spellcheck="false"
+            class="scan-ai-prompt"
+          />
+          <div class="scan-ai-actions">
+            <el-button
+              size="small"
+              @click="copyAiPrompt"
+            >
+              复制提示词
+            </el-button>
+            <span class="scan-hint">macOS 与 Windows 的记录路径都写在里面，AI 会自己判断系统</span>
+          </div>
+        </div>
       </div>
       <template #footer>
         <el-button @click="scanDialogVisible = false">
@@ -930,6 +1025,35 @@ onBeforeUnmount(() => {
   font-family: var(--dsw-font-mono);
   font-size: 11px;
   color: var(--dsw-label-secondary);
+}
+
+/* 「选择文件夹…」：唤起系统选择框，与常用位置按钮区分开单独一行 */
+.scan-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 「让 AI 代劳」区块：发丝线分隔 + 弱化层级 —— 它是兜底入口，不是主路径 */
+.scan-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dsw-border-l2);
+}
+
+.scan-ai-prompt :deep(.el-textarea__inner) {
+  font-family: var(--dsw-font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--dsw-label-secondary);
+}
+
+.scan-ai-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .scan-suggest {

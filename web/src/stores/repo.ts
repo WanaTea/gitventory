@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { OpenTargetInfo, Repo } from '@shared/repo'
-import { getHealth, getRepos, scanRepos } from '../api'
+import { getHealth, getRepos, pickScanDir, scanRepos } from '../api'
 import type { RepoListQuery, RepoListSort, RepoSummary } from '../api'
 
 // 清单页筛选条件（与 GET /api/repos 查询参数一一对应）
@@ -38,6 +38,8 @@ export const useRepoStore = defineStore('repo', () => {
   const loading = ref(false)
   // 「按指定范围重扫」进行中：与 loading（拉列表）分开，空态按钮各自显示自己的进度
   const scanning = ref(false)
+  // 系统文件夹选择框开着：用户可能挑很久，按钮要一直显示进度，免得他以为没反应又点一次
+  const picking = ref(false)
   const error = ref('')
   const staleDays = ref<number>(DEFAULT_STALE_DAYS)
   // 打开方式可用性（GET /api/health.openTargets）；空数组 = 未取到 → 消费方降级为「不禁用」
@@ -132,6 +134,27 @@ export const useRepoStore = defineStore('repo', () => {
     }
   }
 
+  /**
+   * 唤起系统「选择文件夹」对话框（macOS 的 Finder 面板 / Windows 的资源管理器选择框），
+   * 返回用户选中的绝对路径。
+   *
+   * 返回 null 有两种情况，靠 `error` 区分：**用户取消**（error 为空 —— 这是正常操作，
+   * 调用方不该弹错误提示）与**调用失败**（error 已填人话）。
+   */
+  async function pickDir(): Promise<string | null> {
+    picking.value = true
+    error.value = ''
+    try {
+      const { path } = await pickScanDir()
+      return path
+    } catch (e) {
+      error.value = e instanceof Error && e.message !== '' ? e.message : '打开文件夹选择器失败'
+      return null
+    } finally {
+      picking.value = false
+    }
+  }
+
   function resetFilters(): void {
     filters.value = createDefaultFilters()
   }
@@ -143,6 +166,8 @@ export const useRepoStore = defineStore('repo', () => {
     warnings,
     loading,
     scanning,
+    picking,
+    pickDir,
     error,
     staleDays,
     openTargets,

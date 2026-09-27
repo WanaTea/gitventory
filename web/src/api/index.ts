@@ -135,6 +135,19 @@ export async function scanRepos(roots?: string[]): Promise<RepoListData> {
   }) as Promise<RepoListData>
 }
 
+/** POST /api/fs/pick-dir 的响应：`path` 为 null 表示用户在系统弹窗里点了取消 */
+export interface PickDirData {
+  path: string | null
+}
+
+/** 选择文件夹是人对着系统弹窗操作，耗时完全不可控，超时给到比服务端（180s）略高 */
+const PICK_DIR_TIMEOUT = 190_000
+
+/** 唤起系统「选择文件夹」对话框（macOS Finder / Windows 资源管理器），返回绝对路径 */
+export async function pickScanDir(): Promise<PickDirData> {
+  return http.post('/fs/pick-dir', {}, { timeout: PICK_DIR_TIMEOUT }) as Promise<PickDirData>
+}
+
 export async function getHealth(): Promise<HealthData> {
   return http.get('/health') as Promise<HealthData>
 }
