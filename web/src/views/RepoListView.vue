@@ -9,6 +9,7 @@ import RepoTable from '../components/RepoTable.vue'
 import GitModal from '../components/GitModal.vue'
 import { useRepoColumns } from '../composables/useRepoColumns'
 import { formatDateTime, relativeTime } from '../utils/format'
+import { isAbsoluteInput } from '../utils/path'
 
 const store = useRepoStore()
 
@@ -59,13 +60,16 @@ function addRoot(path: string): void {
  * 解析输入框：每行一个路径，允许 `~`。
  * 相对路径直接拒绝 —— 它会被按「服务进程的工作目录」解析，结果取决于服务怎么启动，
  * 这种不确定性不该让用户到结果里去猜。返回 null 表示存在非法输入。
+ *
+ * 绝对路径的判定交给 utils/path.ts（跨平台：POSIX、Windows 盘符、UNC、`~`）——
+ * 原先只认 `/` 与 `~`，Windows 上填盘符路径会被误判成相对路径。
  */
 function parseRootLines(text: string): string[] | null {
   const lines = text
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line !== '')
-  const invalid = lines.find((line) => !line.startsWith('/') && !line.startsWith('~'))
+  const invalid = lines.find((line) => !isAbsoluteInput(line))
   return invalid === undefined ? lines : null
 }
 
@@ -73,7 +77,7 @@ function parseRootLines(text: string): string[] | null {
 async function applyScan(reset: boolean): Promise<void> {
   const roots = reset ? [] : parseRootLines(rootInput.value)
   if (roots === null) {
-    ElMessage.warning('请填写绝对路径（以 / 或 ~ 开头），每行一个')
+    ElMessage.warning('请填写绝对路径（如 /Users/code、D:\\code，或以 ~ 开头），每行一个')
     return
   }
   const ok = await store.scanWithRoots(roots)
@@ -561,8 +565,8 @@ onBeforeUnmount(() => {
     >
       <div class="scan-body">
         <p class="scan-hint">
-          每行一个目录，只扫描这些目录及其子目录（绝对路径，或以
-          <code class="inline-code">~</code> 开头）。
+          每行一个目录，只扫描这些目录及其子目录（绝对路径：
+          <code class="inline-code">/Users/code</code>、<code class="inline-code">D:\code</code>、<code class="inline-code">\\server\share</code>，或以 <code class="inline-code">~</code> 开头）。
         </p>
         <el-input
           v-model="rootInput"
